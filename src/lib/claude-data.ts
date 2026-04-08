@@ -85,10 +85,17 @@ export async function getProjectDetail(slug: string): Promise<ProjectDetail | nu
 }
 
 export async function getSessionConversation(slug: string, sessionId: string): Promise<SessionMessage[]> {
+  // Validate sessionId to prevent path traversal
+  if (!/^[a-zA-Z0-9_-]+$/.test(sessionId)) return [];
+
   const project = resolveProjectBySlug(slug);
   if (!project?.claudeDataPath) return [];
 
   const jsonlPath = path.join(project.claudeDataPath, `${sessionId}.jsonl`);
+
+  // Ensure resolved path stays within the claude data directory
+  if (!jsonlPath.startsWith(project.claudeDataPath)) return [];
+
   return getSessionMessages(jsonlPath);
 }
 

@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
 import { resolveProjectBySlug } from "@/lib/project-resolver";
+import { getCuratedFolder } from "@/lib/config";
+import fs from "fs";
 
 export async function POST(request: Request) {
   const { slug, target } = await request.json();
+
+  if (typeof slug !== "string" || typeof target !== "string") {
+    return NextResponse.json({ error: "Invalid parameters" }, { status: 400 });
+  }
+
   const project = resolveProjectBySlug(slug);
 
   if (!project) {
@@ -11,6 +18,11 @@ export async function POST(request: Request) {
   }
 
   const projectPath = project.path;
+
+  // Ensure path is within the configured projects folder
+  if (!projectPath.startsWith(getCuratedFolder()) || !fs.existsSync(projectPath)) {
+    return NextResponse.json({ error: "Invalid project path" }, { status: 403 });
+  }
 
   return new Promise<Response>((resolve) => {
     let cmd: string;

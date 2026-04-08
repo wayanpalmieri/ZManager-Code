@@ -38,6 +38,7 @@ async function runAnalysis() {
     console.log(`[ZManager] Analysis complete: ${result.insights.length} insights found`);
   } catch (err) {
     console.error("[ZManager] Analysis failed:", err);
+  } finally {
+    isRunning = false;
   }
-  isRunning = false;
 }

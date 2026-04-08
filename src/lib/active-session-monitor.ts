@@ -41,6 +41,7 @@ export function getActiveSessions(): ActiveSession[] {
 }
 
 function checkPid(pid: number): boolean {
+  if (typeof pid !== "number" || pid < 1 || !Number.isInteger(pid)) return false;
   try {
     execSync(`ps -p ${pid}`, { stdio: "ignore" });
     return true;

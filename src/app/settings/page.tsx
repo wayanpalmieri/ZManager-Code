@@ -29,6 +29,9 @@ export default function SettingsPage() {
       setSettings(settingsData);
       setFolders(foldersData);
       setLoading(false);
+    }).catch(() => {
+      setError("Failed to load settings");
+      setLoading(false);
     });
   }, []);
 
