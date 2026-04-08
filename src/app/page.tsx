@@ -1,65 +1,108 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useProjects, useStats, useActiveSessions } from "@/hooks/use-api";
+import { FolderOpen, MessageSquare, Zap, Activity, Clock, ChevronRight } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
+import { ActivityChart } from "@/components/dashboard/activity-chart";
+
+export default function DashboardPage() {
+  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: stats, isLoading: statsLoading } = useStats();
+  const { data: activeSessions } = useActiveSessions();
+
+  const totalSessions = projects?.reduce((s, p) => s + p.sessionCount, 0) ?? 0;
+  const activeCount = activeSessions?.length ?? 0;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="p-6 space-y-6 max-w-[1200px]">
+      <div className="animate-in">
+        <h1 className="text-[22px] font-semibold text-white/95 tracking-tight">Dashboard</h1>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: "Projects", value: projects?.length ?? 0, icon: FolderOpen, color: "#0a84ff", loading: projectsLoading },
+          { label: "Sessions", value: totalSessions, icon: MessageSquare, color: "#bf5af2", loading: projectsLoading },
+          { label: "Messages", value: stats?.totals.totalMessages ?? 0, icon: Zap, color: "#ff9f0a", loading: statsLoading, fmt: true },
+          { label: "Active", value: activeCount, icon: Activity, color: "#30d158", loading: false, live: activeCount > 0 },
+        ].map((s, i) => (
+          <div key={s.label} className="surface-elevated p-4 animate-in !transform-none" style={{ animationDelay: `${i * 50}ms` }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] text-[#98989d]">{s.label}</span>
+              <s.icon className="h-3.5 w-3.5" style={{ color: s.color }} />
+            </div>
+            {s.loading ? <div className="h-7 w-16 shimmer" /> : (
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[22px] font-semibold text-white tabular-nums">{s.fmt ? s.value.toLocaleString() : s.value}</span>
+                {s.live && <div className="h-2 w-2 rounded-full bg-[#30d158] live-dot mb-0.5" />}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Activity */}
+      {stats?.activity && stats.activity.length > 0 && (
+        <div className="surface p-4 animate-in" style={{ animationDelay: "200ms" }}>
+          <p className="section-header mb-3">Activity</p>
+          <ActivityChart data={stats.activity} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      )}
+
+      {/* Active Sessions */}
+      {activeSessions && activeSessions.length > 0 && (
+        <div className="animate-in" style={{ animationDelay: "250ms" }}>
+          <p className="section-header">Live Sessions</p>
+          <div className="overflow-hidden rounded-[10px]">
+            {activeSessions.map((s, i) => (
+              <div key={s.pid} className="list-row flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-2 w-2 rounded-full bg-[#30d158] live-dot" />
+                  <span className="text-[13px] text-white/90 font-medium">{s.projectSlug || "Unknown"}</span>
+                  <span className="text-[11px] text-[#48484a] tabular-nums">PID {s.pid}</span>
+                </div>
+                <span className="text-[11px] text-[#48484a]">{s.entrypoint}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
+      )}
+
+      {/* Recent Projects */}
+      <div className="animate-in" style={{ animationDelay: "300ms" }}>
+        <div className="flex items-center justify-between mb-2">
+          <p className="section-header !mb-0">Recent Projects</p>
+          <Link href="/projects" className="text-[13px] text-[#0a84ff] hover:text-[#409cff] transition-colors cursor-pointer">
+            See All
+          </Link>
+        </div>
+        {projectsLoading ? (
+          <div className="space-y-1"><div className="h-[58px] shimmer" /><div className="h-[58px] shimmer" /><div className="h-[58px] shimmer" /></div>
+        ) : (
+          <div className="overflow-hidden rounded-[10px]">
+            {projects?.slice(0, 8).map((project) => (
+              <Link key={project.slug} href={`/projects/${project.slug}`}>
+                <div className="list-row flex items-center justify-between cursor-pointer group">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-medium text-white/90 truncate">{project.name}</span>
+                      {project.group && <span className="text-[10px] text-[#0a84ff]/70 bg-[#0a84ff]/10 px-1.5 py-0.5 rounded-[4px] shrink-0">{project.group}</span>}
+                      {project.isActive && <div className="h-1.5 w-1.5 rounded-full bg-[#30d158] shrink-0" />}
+                    </div>
+                    {project.description && <p className="text-[12px] text-[#636366] truncate mt-0.5">{project.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 ml-3">
+                    {project.lastActivity && <span className="text-[11px] text-[#48484a] tabular-nums">{formatDistanceToNow(new Date(project.lastActivity), { addSuffix: true })}</span>}
+                    <ChevronRight className="h-3.5 w-3.5 text-[#48484a] group-hover:text-[#98989d] transition-colors" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
