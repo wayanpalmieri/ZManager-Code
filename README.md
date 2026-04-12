@@ -63,8 +63,6 @@ CURATED_FOLDER=/path/to/your/claude-code-projects
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
-
 ## Tech Stack
 
 - **Next.js 16** — App Router, API routes, server components
