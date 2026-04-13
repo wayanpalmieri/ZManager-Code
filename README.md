@@ -241,4 +241,4 @@ You can edit these directly, but the Settings and Prompts pages are the primary 
 
 ## License
 
-Private — personal use.
+MIT — see [LICENSE](LICENSE).
