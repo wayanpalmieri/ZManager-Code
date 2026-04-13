@@ -43,3 +43,7 @@ next-env.d.ts
 # Claudeboard runtime files
 insights-cache.json
 claudeboard-settings.json
+claudeboard-prompts.json
+
+# Claude Code local workspace data
+.claude/

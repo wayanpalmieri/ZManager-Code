@@ -24,6 +24,17 @@ export async function getAllProjects(): Promise<ProjectMeta[]> {
     // Build description from session titles and first prompts
     const description = deriveDescription(sessions);
 
+    const totals = sessions.reduce(
+      (acc, s) => ({
+        input: acc.input + s.inputTokens,
+        output: acc.output + s.outputTokens,
+        cacheRead: acc.cacheRead + s.cacheReadTokens,
+        cacheWrite: acc.cacheWrite + s.cacheWriteTokens,
+        cost: acc.cost + s.cost,
+      }),
+      { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 }
+    );
+
     results.push({
       slug: project.slug,
       name: project.name,
@@ -36,6 +47,11 @@ export async function getAllProjects(): Promise<ProjectMeta[]> {
       lastActivity: lastSession?.modified || null,
       gitBranch: lastSession?.gitBranch || "",
       isActive: activeProjectSlugs.has(project.slug),
+      totalInputTokens: totals.input,
+      totalOutputTokens: totals.output,
+      totalCacheReadTokens: totals.cacheRead,
+      totalCacheWriteTokens: totals.cacheWrite,
+      totalCost: totals.cost,
     });
   }
 
@@ -66,6 +82,17 @@ export async function getProjectDetail(slug: string): Promise<ProjectDetail | nu
   const lastSession = sessions[0];
   const description = deriveDescription(sessions);
 
+  const totals = sessions.reduce(
+    (acc, s) => ({
+      input: acc.input + s.inputTokens,
+      output: acc.output + s.outputTokens,
+      cacheRead: acc.cacheRead + s.cacheReadTokens,
+      cacheWrite: acc.cacheWrite + s.cacheWriteTokens,
+      cost: acc.cost + s.cost,
+    }),
+    { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 }
+  );
+
   return {
     slug: project.slug,
     name: project.name,
@@ -78,6 +105,11 @@ export async function getProjectDetail(slug: string): Promise<ProjectDetail | nu
     lastActivity: lastSession?.modified || null,
     gitBranch: lastSession?.gitBranch || "",
     isActive,
+    totalInputTokens: totals.input,
+    totalOutputTokens: totals.output,
+    totalCacheReadTokens: totals.cacheRead,
+    totalCacheWriteTokens: totals.cacheWrite,
+    totalCost: totals.cost,
     sessions,
     todos,
     plans,

@@ -10,6 +10,11 @@ export interface ProjectMeta {
   lastActivity: string | null;
   gitBranch: string;
   isActive: boolean;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCacheReadTokens: number;
+  totalCacheWriteTokens: number;
+  totalCost: number;
 }
 
 export interface ProjectDetail extends ProjectMeta {
@@ -28,6 +33,16 @@ export interface SessionEntry {
   gitBranch: string;
   isSidechain: boolean;
   entrypoint: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  cost: number;
+  model: string | null;
+  // True when the primary .jsonl has been archived/deleted. Token totals,
+  // when non-zero, are reconstructed from surviving subagent JSONLs and
+  // therefore only represent a partial view of the original session.
+  archived: boolean;
 }
 
 export interface TodoItem {
@@ -58,6 +73,8 @@ export interface SessionMessage {
     usage?: {
       input_tokens?: number;
       output_tokens?: number;
+      cache_creation_input_tokens?: number;
+      cache_read_input_tokens?: number;
     };
   };
   aiTitle?: string;

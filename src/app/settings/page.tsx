@@ -35,6 +35,24 @@ export default function SettingsPage() {
     });
   }, []);
 
+  async function handleBrowse() {
+    setError(null);
+    setSaved(false);
+    try {
+      const res = await fetch("/api/settings/browse", { method: "POST" });
+      if (res.status === 204) return; // user cancelled
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Browse failed");
+        return;
+      }
+      const { path } = await res.json();
+      if (path) setSettings(s => ({ ...s, projectsFolder: path }));
+    } catch {
+      setError("Browse failed");
+    }
+  }
+
   async function handleSaveFolder() {
     setError(null);
     setSaved(false);
@@ -112,6 +130,15 @@ export default function SettingsPage() {
                   />
                 )}
               </div>
+              <button
+                type="button"
+                onClick={handleBrowse}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg text-[13px] font-medium text-white/90 bg-white/[0.06] hover:bg-white/[0.1] active:bg-white/[0.12] active:scale-[0.97] border-[0.5px] border-white/[0.08] transition-all duration-200 cursor-pointer disabled:opacity-50"
+              >
+                <FolderOpen className="h-3.5 w-3.5" />
+                Browse
+              </button>
               <button
                 type="button"
                 onClick={handleSaveFolder}

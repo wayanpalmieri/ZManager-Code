@@ -73,13 +73,46 @@ export function useSearch(query: string) {
   );
 }
 
-export async function launchProject(slug: string, target: "vscode" | "terminal" | "claude") {
+export async function launchProject(
+  slug: string,
+  target: "vscode" | "terminal" | "claude",
+  opts?: { sessionId?: string; promptText?: string }
+) {
   const res = await fetch("/api/launch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ slug, target }),
+    body: JSON.stringify({ slug, target, ...opts }),
   });
   const data = await res.json();
   if (!res.ok) console.error("Launch failed:", data);
   return data;
+}
+
+export interface GitStatus {
+  branch: string;
+  ahead: number;
+  behind: number;
+  dirty: number;
+  hasGit: boolean;
+  remoteUrl: string | null;
+}
+
+export function useGitStatuses() {
+  return useSWR<Record<string, GitStatus>>("/api/git", fetcher, {
+    refreshInterval: 30000,
+    revalidateOnFocus: true,
+  });
+}
+
+// GitHub visibility is fetched separately from git status because it hits
+// the network (api.github.com) and would otherwise slow every card render.
+// The server caches results for 6h, so revalidating hourly on the client
+// is basically free after first load.
+export type Visibility = "public" | "private" | "unknown";
+export function useGitHubVisibility() {
+  return useSWR<Record<string, Visibility>>("/api/github-visibility", fetcher, {
+    refreshInterval: 60 * 60 * 1000,
+    revalidateOnFocus: false,
+    dedupingInterval: 5 * 60 * 1000,
+  });
 }

@@ -19,11 +19,29 @@ function asEscape(s: string): string {
 // Windows shell metacharacters that can break argument boundaries when shell=true.
 const WIN_UNSAFE = /["<>|&^()%!]/;
 
+// Session IDs in ~/.claude/projects/**/*.jsonl are UUID-like. Same charset
+// we already accept in the session conversation route.
+const SESSION_ID_RE = /^[a-zA-Z0-9_-]+$/;
+const PROMPT_MAX_LEN = 4000;
+
 export async function POST(request: Request) {
-  const { slug, target } = await request.json();
+  const { slug, target, sessionId, promptText } = await request.json();
 
   if (typeof slug !== "string" || typeof target !== "string") {
     return NextResponse.json({ error: "Invalid parameters" }, { status: 400 });
+  }
+
+  // sessionId and promptText are only meaningful for target=claude and
+  // must pass strict validation before any shell interpolation.
+  if (sessionId !== undefined) {
+    if (typeof sessionId !== "string" || !SESSION_ID_RE.test(sessionId)) {
+      return NextResponse.json({ error: "Invalid sessionId" }, { status: 400 });
+    }
+  }
+  if (promptText !== undefined) {
+    if (typeof promptText !== "string" || promptText.length > PROMPT_MAX_LEN) {
+      return NextResponse.json({ error: "Invalid promptText" }, { status: 400 });
+    }
   }
 
   const project = resolveProjectBySlug(slug);
@@ -44,6 +62,15 @@ export async function POST(request: Request) {
 
   const platform = os.platform(); // 'darwin' | 'win32' | 'linux'
 
+  // `claude` CLI modifiers. On POSIX shells we interpolate into a single
+  // command string (osascript/bash -c need that), so promptText must be
+  // shQuote'd; sessionId is regex-validated so it's safe literal.
+  const claudeSuffixPosix = sessionId
+    ? ` --resume ${sessionId}`
+    : promptText
+    ? ` ${shQuote(promptText)}`
+    : "";
+
   return new Promise<Response>((resolve) => {
     let cmd: string;
     let args: string[];
@@ -62,7 +89,7 @@ export async function POST(request: Request) {
           break;
         case "claude": {
           // Build shell command with POSIX-quoted path, then escape for AppleScript string.
-          const shellCmd = `cd ${shQuote(resolvedPath)} && claude`;
+          const shellCmd = `cd ${shQuote(resolvedPath)} && claude${claudeSuffixPosix}`;
           cmd = "osascript";
           args = [
             "-e", `tell application "Terminal" to activate`,
@@ -91,10 +118,24 @@ export async function POST(request: Request) {
           cmd = "wt.exe";
           args = ["-d", resolvedPath];
           break;
-        case "claude":
+        case "claude": {
+          // Pass resume/prompt as argv entries rather than string-concat so
+          // cmd.exe doesn't re-interpret any characters. Apply the same
+          // WIN_UNSAFE gate to promptText as we do for paths.
+          const winSuffix: string[] = [];
+          if (sessionId) {
+            winSuffix.push("--resume", sessionId);
+          } else if (promptText) {
+            if (WIN_UNSAFE.test(promptText)) {
+              resolve(NextResponse.json({ error: "Prompt contains unsafe characters" }, { status: 400 }));
+              return;
+            }
+            winSuffix.push(promptText);
+          }
           cmd = "wt.exe";
-          args = ["-d", resolvedPath, "cmd", "/k", "claude"];
+          args = ["-d", resolvedPath, "cmd", "/k", "claude", ...winSuffix];
           break;
+        }
         default:
           resolve(NextResponse.json({ error: "Invalid target" }, { status: 400 }));
           return;
@@ -117,7 +158,7 @@ export async function POST(request: Request) {
           cmd = "x-terminal-emulator";
           args = [
             "-e", "bash", "-c",
-            `cd ${shQuote(resolvedPath)} && claude; exec bash`,
+            `cd ${shQuote(resolvedPath)} && claude${claudeSuffixPosix}; exec bash`,
           ];
           break;
         default:

@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, Sparkles, Search, Settings } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Sparkles, Search, Settings, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useActiveSessions } from "@/hooks/use-api";
+import { useModifierLabel } from "@/hooks/use-platform";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderOpen },
+  { href: "/prompts", label: "Prompts", icon: Bookmark },
   { href: "/tasks", label: "Insights", icon: Sparkles },
   { href: "/search", label: "Search", icon: Search },
 ];
@@ -17,6 +19,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: activeSessions } = useActiveSessions();
   const activeCount = activeSessions?.length ?? 0;
+  const modLabel = useModifierLabel();
 
   return (
     <aside className="w-[220px] bg-[#1c1c1e]/80 backdrop-blur-xl flex flex-col h-full border-r border-white/[0.06]">
@@ -54,6 +57,10 @@ export function Sidebar() {
       </nav>
 
       <div className="px-3 pb-2 pt-1 border-t border-white/[0.04]">
+        <div className="flex items-center justify-between px-2.5 py-2 text-[11px] text-[#636366]">
+          <span>Command palette</span>
+          <kbd className="bg-white/[0.06] px-1.5 py-0.5 rounded text-[10px] font-mono">{modLabel}</kbd>
+        </div>
         <Link
           href="/settings"
           className={cn(
