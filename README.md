@@ -77,7 +77,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Next will print the local URL in the terminal — open that.
 
 On first launch the app defaults to `~/Projects` as the projects folder. Open **Settings** and either paste a path or click **Browse** to open the native OS folder picker. Any folders under that directory will be discovered automatically.
 
