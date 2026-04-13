@@ -4,6 +4,8 @@ A local dashboard for managing all your Claude Code projects from one interface.
 
 Mission control for Claude Code projects.
 
+<img width="1376" height="768" alt="claudeboard" src="https://github.com/user-attachments/assets/c4f226e2-fa27-4d0c-b4cb-2a4dd0e21c28" />
+
 ## What It Does
 
 Claudeboard reads your `~/.claude/` data directory and surfaces everything in a unified dashboard — projects, sessions, activity, cost, automated insights, and one-click launches.
