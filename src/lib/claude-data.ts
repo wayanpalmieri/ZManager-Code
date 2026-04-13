@@ -4,6 +4,7 @@ import { getSessionsForProject, getSessionMessages } from "./session-parser";
 import { getTodosForProject } from "./todo-aggregator";
 import { getPlansForProject } from "./plan-matcher";
 import { getActiveSessions } from "./active-session-monitor";
+import { readProjectDescription } from "./project-description";
 import type { ProjectMeta, ProjectDetail, SessionMessage } from "@/types/project";
 
 export async function getAllProjects(): Promise<ProjectMeta[]> {
@@ -21,8 +22,10 @@ export async function getAllProjects(): Promise<ProjectMeta[]> {
     const totalMessages = sessions.reduce((sum, s) => sum + s.messageCount, 0);
     const lastSession = sessions[0]; // already sorted by modified desc
 
-    // Build description from session titles and first prompts
-    const description = deriveDescription(sessions);
+    // Prefer project-level description (package.json / README / manifest)
+    // over the session-derived one so cards read "what this project is"
+    // instead of "what was last being asked of Claude".
+    const description = readProjectDescription(project.path) || deriveDescription(sessions);
 
     const totals = sessions.reduce(
       (acc, s) => ({
@@ -80,7 +83,7 @@ export async function getProjectDetail(slug: string): Promise<ProjectDetail | nu
 
   const totalMessages = sessions.reduce((sum, s) => sum + s.messageCount, 0);
   const lastSession = sessions[0];
-  const description = deriveDescription(sessions);
+  const description = readProjectDescription(project.path) || deriveDescription(sessions);
 
   const totals = sessions.reduce(
     (acc, s) => ({
